@@ -177,7 +177,7 @@ export default function HSKQuizApp() {
     <div className="p-6">
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-6">
         <h1 className="text-3xl font-bold text-center mb-6">
-          HSK Survival Quiz
+          HSK 1 No. 1 - 20 Quiz
         </h1>
 
         <div className="flex gap-3 mb-6">
