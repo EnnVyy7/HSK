@@ -1,5 +1,4 @@
-const { useState, useEffect, useMemo } = React;
-import { words } from "../data/word.js";
+const { useState, useEffect, useMemo, useRef } = React;
 
 export default function HSKQuizApp() {
   // HSK 1 No 1 - 20
@@ -48,6 +47,9 @@ export default function HSKQuizApp() {
   const finalScore100 = Math.round((score / maxScore) * 100);
 
   const current = list[index];
+
+  const meaningRef = useRef(null);
+  const pinyinRef = useRef(null);
 
   useEffect(() => {
     if (mode === "hardcore" && started && !finished && timeLeft > 0) {
@@ -157,6 +159,20 @@ export default function HSKQuizApp() {
     setWrongAnswers([]);
   };
 
+  function handleEnter(event) {
+    if (event.key === "Enter") {
+      if (!showResult) {
+        checkAnswer();
+      } else {
+        nextQuestion();
+      }
+    }
+  }
+
+  useEffect(() => {
+    pinyinRef.current?.focus();
+  }, [index]);
+
   return (
     <div className="p-6">
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-6">
@@ -227,17 +243,31 @@ export default function HSKQuizApp() {
               )}
 
               <input
+                ref={pinyinRef}
                 type="text"
+                id="formPinyin"
                 value={pinyin}
                 onChange={(e) => setPinyin(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    meaningRef.current.focus();
+                  }
+                }}
                 placeholder="Ketik pinyin bernada"
                 className="w-full border-2 rounded-2xl px-4 py-3 outline-none focus:border-blue-400"
               />
 
               <input
+                ref={meaningRef}
                 type="text"
+                id="formMeaning"
                 value={meaning}
                 onChange={(e) => setMeaning(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleEnter(e);
+                  }
+                }}
                 placeholder="Ketik arti Indonesia"
                 className="w-full border-2 rounded-2xl px-4 py-3 outline-none focus:border-blue-400"
               />
