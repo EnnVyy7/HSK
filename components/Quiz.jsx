@@ -2,29 +2,29 @@ const { useState, useEffect, useMemo } = React;
 import { words } from "../data/word.js";
 
 export default function HSKQuizApp() {
-  // HSK 1 No 1 - 60
+  // HSK 1 No 1 - 20
 
   const words = [
-  ["爱", "ài", "cinta"],
-  ["八", "bā", "delapan"],
-  ["爸爸", "bà ba", "ayah"],
-  ["吧", "ba", "ajak"],
-  ["白天", "bái tiān", "siang hari"],
-  ["百", "bǎi", "seratus"],
-  ["半", "bàn", "setengah"],
-  ["包子", "bāo zi", "bakpao"],
-  ["杯子", "bēi zi", "cangkir"],
-  ["本", "běn", "sebuah"],
-  ["边", "biān", "samping"],
-  ["病", "bìng", "sakit"],
-  ["不", "bù", "tidak"],
-  ["不客气", "bú kè qi", "sama sama"],
-  ["不要", "bú yào", "jangan"],
-  ["菜", "cài", "sayur"],
-  ["茶", "chá", "teh"],
-  ["唱", "chàng", "nyanyi"],
-  ["超市", "chāo shì", "supermarket"],
-  ["车", "chē", "mobil"]
+    ["爱", "ài", "cinta"],
+    ["八", "bā", "delapan"],
+    ["爸爸", "bà ba", "ayah"],
+    ["吧", "ba", "ajak"],
+    ["白天", "bái tiān", "siang hari"],
+    ["百", "bǎi", "seratus"],
+    ["半", "bàn", "setengah"],
+    ["包子", "bāo zi", "bakpao"],
+    ["杯子", "bēi zi", "cangkir"],
+    ["本", "běn", "sebuah"],
+    ["边", "biān", "samping"],
+    ["病", "bìng", "sakit"],
+    ["不", "bù", "tidak"],
+    ["不客气", "bú kè qi", "sama sama"],
+    ["不要", "bú yào", "jangan"],
+    ["菜", "cài", "sayur"],
+    ["茶", "chá", "teh"],
+    ["唱", "chàng", "nyanyi"],
+    ["超市", "chāo shì", "supermarket"],
+    ["车", "chē", "mobil"],
   ];
 
   const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
