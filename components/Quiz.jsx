@@ -1,41 +1,6 @@
 const { useState, useEffect, useMemo, useRef } = React;
 
 export default function HSKQuizApp() {
-  // HSK 1 No 1 - 20
-
-  const words = [
-    ["爱", "ài", "cinta"],
-    ["八", "bā", "delapan"],
-    ["爸爸", "bà ba", "ayah"],
-    ["吧", "ba", "ajak"],
-    ["白天", "bái tiān", "siang hari"],
-    ["百", "bǎi", "seratus"],
-    ["半", "bàn", "setengah"],
-    ["包子", "bāo zi", "bakpao"],
-    ["杯子", "bēi zi", "cangkir"],
-    ["本", "běn", "sebuah"],
-    ["边", "biān", "samping"],
-    ["病", "bìng", "sakit"],
-    ["不", "bù", "tidak"],
-    ["不客气", "bú kè qi", "sama sama"],
-    ["不要", "bú yào", "jangan"],
-    ["菜", "cài", "sayur"],
-    ["茶", "chá", "teh"],
-    ["唱", "chàng", "nyanyi"],
-    ["超市", "chāo shì", "supermarket"],
-    ["车", "chē", "mobil"],
-    ["吃", "chī", "makan"],
-    ["出租车", "chū zū chē", "taksi"],
-    ["穿", "chuān", "memakai"],
-    ["打电话", "dǎ diàn huà", "telepon"],
-    ["大", "dà", "besar"],
-    ["大家", "dà jiā", "semuanya"],
-    ["大学", "dà xué", "kuliah"],
-    ["大学生", "dà xué shēng", "mahasiswa"],
-    ["到", "dào", "sampai"],
-    ["的", "de", "kepunyaan"],
-  ];
-
   const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
   const [mode, setMode] = useState("quiz");
@@ -187,7 +152,7 @@ export default function HSKQuizApp() {
     <div className="p-6">
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-6">
         <h1 className="text-3xl font-bold text-center mb-6">
-          HSK 1 No. 1 - 20 Quiz
+          HSK 1 No. 1 - 40 Quiz
         </h1>
 
         <div className="flex gap-3 mb-6">
