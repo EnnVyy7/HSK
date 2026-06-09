@@ -24,6 +24,16 @@ export default function HSKQuizApp() {
     ["唱", "chàng", "nyanyi"],
     ["超市", "chāo shì", "supermarket"],
     ["车", "chē", "mobil"],
+    ["吃", "chī", "makan"],
+    ["出租车", "chū zū chē", "taksi"],
+    ["穿", "chuān", "memakai"],
+    ["打电话", "dǎ diàn huà", "telepon"],
+    ["大", "dà", "besar"],
+    ["大家", "dà jiā", "semuanya"],
+    ["大学", "dà xué", "kuliah"],
+    ["大学生", "dà xué shēng", "mahasiswa"],
+    ["到", "dào", "sampai"],
+    ["的", "de", "kepunyaan"],
   ];
 
   const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
