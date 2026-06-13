@@ -1,10 +1,21 @@
-const { useState, useEffect, useMemo, useRef } = React;
+const { useState, useEffect, useRef } = React;
 
 export default function HSKQuizApp() {
   const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
+  // --- SCREEN STATE ---
+  // "select" = pemilihan soal, "quiz" = kuis berjalan
+  const [screen, setScreen] = useState("select");
+
+  // Nomor soal yang dipilih (1-based index, mengacu ke array words)
+  const [selectedNums, setSelectedNums] = useState(() =>
+    Array.from({ length: words.length }, (_, i) => i + 1),
+  );
+  // Untuk range selection: menyimpan anchor (titik awal klik)
+  const [rangeAnchor, setRangeAnchor] = useState(null);
+
   const [mode, setMode] = useState("quiz");
-  const [list, setList] = useState(shuffle(words));
+  const [list, setList] = useState([]);
   const [index, setIndex] = useState(0);
   const [pinyin, setPinyin] = useState("");
   const [meaning, setMeaning] = useState("");
@@ -17,25 +28,33 @@ export default function HSKQuizApp() {
   const [answered, setAnswered] = useState({});
   const [wrongAnswers, setWrongAnswers] = useState([]);
 
-  const totalQuestions = words.length;
+  const totalQuestions = list.length;
   const maxScore = totalQuestions * 2;
-  const finalScore100 = Math.round((score / maxScore) * 100);
+  const finalScore100 = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
   const current = list[index];
 
   const meaningRef = useRef(null);
   const pinyinRef = useRef(null);
 
+  // --- TIMER (hardcore) ---
   useEffect(() => {
     if (mode === "hardcore" && started && !finished && timeLeft > 0) {
       const timer = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
-
       return () => clearInterval(timer);
     }
   }, [mode, started, finished, timeLeft]);
 
+  // --- AUTO FOCUS ---
+  useEffect(() => {
+    if (screen === "quiz") {
+      pinyinRef.current?.focus();
+    }
+  }, [index, screen]);
+
+  // --- NORMALISASI PINYIN ---
   const normalize = (text) =>
     text
       .toLowerCase()
@@ -45,6 +64,67 @@ export default function HSKQuizApp() {
       .replace(/[ôóǒò]/g, "o")
       .replace(/[ûúǔù]/g, "u");
 
+  // --- MULAI QUIZ ---
+  const startQuiz = () => {
+    if (selectedNums.length === 0) return;
+    const selected = selectedNums.map((n) => words[n - 1]);
+    setList(shuffle(selected));
+    setIndex(0);
+    setPinyin("");
+    setMeaning("");
+    setScore(0);
+    setFinished(false);
+    setShowResult(false);
+    setTimeLeft(1800);
+    setStarted(false);
+    setAnswered({});
+    setWrongAnswers([]);
+    setScreen("quiz");
+  };
+
+  // --- RANGE SELECTION ---
+  // Klik pertama = set anchor, klik kedua = pilih/hapus semua nomor dalam range
+  const handleNumClick = (n) => {
+    if (rangeAnchor === null) {
+      // Klik pertama: set anchor, toggle nomor ini
+      setRangeAnchor(n);
+      setSelectedNums((prev) =>
+        prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n],
+      );
+    } else {
+      // Klik kedua: tentukan range dari anchor ke n
+      const lo = Math.min(rangeAnchor, n);
+      const hi = Math.max(rangeAnchor, n);
+      const rangeNums = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+
+      // Jika anchor sudah terpilih → pilih seluruh range
+      // Jika anchor tidak terpilih → hapus seluruh range
+      const anchorSelected = selectedNums.includes(rangeAnchor);
+
+      setSelectedNums((prev) => {
+        if (anchorSelected) {
+          const merged = new Set([...prev, ...rangeNums]);
+          return [...merged].sort((a, b) => a - b);
+        } else {
+          return prev.filter((x) => !rangeNums.includes(x));
+        }
+      });
+
+      setRangeAnchor(null); // reset anchor setelah range dipilih
+    }
+  };
+
+  const selectAll = () => {
+    setRangeAnchor(null);
+    setSelectedNums(Array.from({ length: words.length }, (_, i) => i + 1));
+  };
+
+  const deselectAll = () => {
+    setRangeAnchor(null);
+    setSelectedNums([]);
+  };
+
+  // --- CHECK ANSWER ---
   const checkAnswer = () => {
     let earned = 0;
 
@@ -68,21 +148,13 @@ export default function HSKQuizApp() {
     if (earned < 2) {
       setWrongAnswers((prev) => [
         ...prev,
-        {
-          hanzi: current[0],
-          pinyin: current[1],
-          meaning: current[2],
-        },
+        { hanzi: current[0], pinyin: current[1], meaning: current[2] },
       ]);
     }
 
     setAnswered((prev) => ({
       ...prev,
-      [index]: {
-        pinyin: current[1],
-        meaning: current[2],
-        revealed: true,
-      },
+      [index]: { pinyin: current[1], meaning: current[2], revealed: true },
     }));
 
     setShowResult(true);
@@ -95,10 +167,8 @@ export default function HSKQuizApp() {
 
     if (index + 1 >= list.length) {
       setFinished(true);
-
       if (mode === "hardcore") {
         const finalScore = Math.round((score / maxScore) * 100);
-
         setHistory((prev) => [
           {
             nilai: finalScore,
@@ -109,7 +179,6 @@ export default function HSKQuizApp() {
       }
     } else {
       setIndex((prev) => prev + 1);
-      setShowResult(false);
     }
   };
 
@@ -121,7 +190,8 @@ export default function HSKQuizApp() {
   };
 
   const resetQuiz = () => {
-    setList(shuffle(words));
+    const selected = selectedNums.map((n) => words[n - 1]);
+    setList(shuffle(selected));
     setIndex(0);
     setPinyin("");
     setMeaning("");
@@ -136,24 +206,134 @@ export default function HSKQuizApp() {
 
   function handleEnter(event) {
     if (event.key === "Enter") {
-      if (!showResult) {
-        checkAnswer();
-      } else {
-        nextQuestion();
-      }
+      if (!showResult) checkAnswer();
+      else nextQuestion();
     }
   }
 
-  useEffect(() => {
-    pinyinRef.current?.focus();
-  }, [index]);
+  // ===========================
+  // SCREEN: PEMILIHAN SOAL
+  // ===========================
+  if (screen === "select") {
+    return (
+      <div className="p-6">
+        <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-6">
+          <h1 className="text-3xl font-bold text-center mb-2">HSK 1 Quiz</h1>
+          <p className="text-center text-gray-500 mb-6">
+            Pilih nomor soal yang ingin dikerjakan
+          </p>
 
+          {/* Tombol Pilih Semua / Hapus Semua */}
+          <div className="flex gap-3 mb-4">
+            <button
+              onClick={selectAll}
+              className="px-4 py-2 rounded-2xl font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer text-sm"
+            >
+              Pilih Semua
+            </button>
+            <button
+              onClick={deselectAll}
+              className="px-4 py-2 rounded-2xl font-bold bg-red-100 text-red-700 hover:bg-red-200 cursor-pointer text-sm"
+            >
+              Hapus Semua
+            </button>
+            <span className="ml-auto text-sm text-gray-500 self-center">
+              {selectedNums.length} / {words.length} dipilih
+            </span>
+          </div>
+
+          {/* Petunjuk range */}
+          <div className="text-sm text-gray-400 mb-3">
+            {rangeAnchor === null
+              ? "💡 Klik nomor pertama untuk menentukan awal range"
+              : `📍 Anchor: ${rangeAnchor} — sekarang klik nomor akhir range`}
+          </div>
+
+          {/* Grid Nomor */}
+          <div className="grid grid-cols-8 gap-2 mb-6">
+            {words.map((word, i) => {
+              const num = i + 1;
+              const isSelected = selectedNums.includes(num);
+              const isAnchor = rangeAnchor === num;
+              const inPreviewRange =
+                rangeAnchor !== null &&
+                num >= Math.min(rangeAnchor, num) &&
+                num <= Math.max(rangeAnchor, num);
+
+              return (
+                <button
+                  key={num}
+                  onClick={() => handleNumClick(num)}
+                  title={`${word[0]} (${word[1]}) — ${word[2]}`}
+                  className={`
+                    aspect-square rounded-xl font-bold text-sm cursor-pointer transition-all
+                    ${
+                      isAnchor
+                        ? "bg-orange-400 text-white shadow-lg scale-110 ring-2 ring-orange-300"
+                        : isSelected
+                          ? "bg-blue-500 text-white shadow-md scale-105"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    }
+                  `}
+                >
+                  {num}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Preview kata yang dipilih */}
+          {selectedNums.length > 0 && (
+            <div className="bg-blue-50 rounded-2xl p-4 mb-6 max-h-40 overflow-y-auto">
+              <p className="text-sm font-bold text-blue-700 mb-2">
+                Kata yang dipilih:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[...selectedNums]
+                  .sort((a, b) => a - b)
+                  .map((n) => (
+                    <span
+                      key={n}
+                      className="bg-white text-blue-800 text-sm px-3 py-1 rounded-xl border border-blue-200"
+                    >
+                      {n}. {words[n - 1][0]}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tombol Mulai */}
+          <button
+            onClick={startQuiz}
+            disabled={selectedNums.length === 0}
+            className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white py-3 rounded-2xl font-bold text-lg cursor-pointer transition-colors"
+          >
+            Mulai Quiz ({selectedNums.length} soal)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ===========================
+  // SCREEN: QUIZ
+  // ===========================
   return (
     <div className="p-6">
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-6">
-        <h1 className="text-3xl font-bold text-center mb-6">
-          HSK 1 No. 1 - 40 Quiz
-        </h1>
+        <div className="flex items-center gap-3 mb-6">
+          {/* Tombol kembali ke pemilihan soal */}
+          <button
+            onClick={() => setScreen("select")}
+            className="px-3 py-2 rounded-2xl font-bold bg-gray-100 hover:bg-gray-200 text-gray-600 cursor-pointer text-sm"
+          >
+            ← Pilih Soal
+          </button>
+          <h1 className="text-2xl font-bold flex-1 text-center pr-16">
+            HSK 1 Quiz
+          </h1>
+        </div>
 
         <div className="flex gap-3 mb-6">
           <button
@@ -220,7 +400,6 @@ export default function HSKQuizApp() {
               <input
                 ref={pinyinRef}
                 type="text"
-                id="formPinyin"
                 value={pinyin}
                 onChange={(e) => setPinyin(e.target.value)}
                 onKeyDown={(e) => {
@@ -235,13 +414,10 @@ export default function HSKQuizApp() {
               <input
                 ref={meaningRef}
                 type="text"
-                id="formMeaning"
                 value={meaning}
                 onChange={(e) => setMeaning(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleEnter(e);
-                  }
+                  if (e.key === "Enter") handleEnter(e);
                 }}
                 placeholder="Ketik arti Indonesia"
                 className="w-full border-2 rounded-2xl px-4 py-3 outline-none focus:border-blue-400"
@@ -278,14 +454,22 @@ export default function HSKQuizApp() {
           <div className="text-center">
             <h2 className="text-4xl font-bold mb-4">Selesai 🎉</h2>
 
-            <p className="text-2xl mb-4">Nilai: {finalScore100} / 100</p>
+            <p className="text-2xl mb-6">Nilai: {finalScore100} / 100</p>
 
-            <button
-              onClick={resetQuiz}
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-2xl font-bold cursor-pointer"
-            >
-              Main Lagi
-            </button>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={resetQuiz}
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-2xl font-bold cursor-pointer"
+              >
+                Main Lagi
+              </button>
+              <button
+                onClick={() => setScreen("select")}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold cursor-pointer"
+              >
+                Pilih Soal Lain
+              </button>
+            </div>
           </div>
         )}
 
